@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-File Upload</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .upload-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            transition: all 200ms ease-in-out;
+        }
+
+        .upload-container * {
+            animation: fadeIn 200ms linear;
+        }
+
+        h2 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area:hover {
+            border-color: #4299e1;
+            background: #ebf8ff;
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: #4299e1;
+            margin-bottom: 1rem;
+        }
+
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 transparent;
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background-color: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb:hover {
+            background-color: #a0aec0;
+        }
+
+        .file-item {
+            background: #f7fafc;
+            border: 1px solid #f7fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+
+        .file-item.completed {
+            background: #f0fff4;
+            border: 1px solid #c6f6d5;
+        }
+
+        .file-item.completed .remove-file {
+            display: none;
+        }
+
+        .file-item.error {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+        }
+
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .file-size {
+            color: #718096;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .remove-file {
+            background: none;
+            border: none;
+            color: #e53e3e;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .remove-file:hover {
+            background: #fff5f5;
+        }
+
+        .progress-container {
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #edf2f7;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 0.25rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4299e1;
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+
+        .progress-text {
+            color: #718096;
+            font-size: 0.875rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .success-icon {
+            color: #38a169;
+            margin-left: 0.5rem;
+            padding: 0.25rem;
+        }
+
+        .error-icon {
+            color: #e53e3e;
+            margin-left: 0.5rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .empty-text {
+            text-align: center;
+            color: #718096;
+            padding: 1rem;
+        }
+
+        .action-button {
+            display: none;
+            width: 100%;
+            padding: 0.75rem;
+            background: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+            transition: background 0.2s;
+        }
+
+        .action-button:hover {
+            background: #3182ce;
+        }
+
+        .action-button.clear {
+            background: #718096;
+        }
+
+        .action-button.clear:hover {
+            background: #4a5568;
+        }
+
+        .action-button.uploading {
+            background: #a0aec0;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-item.error .progress-fill {
+            background: #e53e3e;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .action-button.retry {
+            background: #e53e3e;
+        }
+
+        .action-button.retry:hover {
+            background: #c53030;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="upload-container">
+        <h2><i class='bx bx-cloud-upload'></i> Upload Files</h2>
+
+        <div class="upload-area" id="dropZone">
+            <i class='bx bx-upload'></i>
+            <p>Drag & drop files here or click to browse</p>
+            <input type="file" id="fileInput" multiple>
+        </div>
+
+        <div class="file-list" id="fileList">
+            <div class="empty-text">No files selected</div>
+        </div>
+
+        <button id="actionButton" class="action-button">
+            Upload Files
+        </button>
+    </div>
+
+    <script>
+        const chunkSize = 25 * 1024 * 1024;
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const actionButton = document.getElementById('actionButton');
+
+        // Store file upload states
+        const uploadStates = new Map();
+        let uploadsCompleted = 0;
+        let totalUploads = 0;
+
+        function createFileItem(file) {
+            const fileId = `file-${Date.now()}-${file.name}`;
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.id = fileId;
+
+            fileItem.innerHTML = `
+        <div class="file-header">
+            <div class="file-info">
+                <i class='bx bx-file'></i>
+                <span class="file-name">${file.name}</span>
+                <span class="file-size">${formatFileSize(file.size)}</span>
+            </div>
+            <div class="file-status">
+                <button class="remove-file" onclick="removeFile('${fileId}')">
+                    <i class='bx bx-trash'></i>
+                </button>
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-text">
+                <span class="progress-percentage">0%</span>
+                <span class="upload-speed" style="display: none;">0 MB/s</span>
+            </div>
+        </div>
+        <div class="error-message"></div>
+    `;
+
+            return { fileId, fileItem };
+        }
+
+        function removeFile(fileId) {
+            const state = uploadStates.get(fileId);
+            if (state && state.xhr) {
+                state.xhr.abort(); // Abort ongoing upload
+
+                // Send cancellation request to server
+                const cancelXhr = new XMLHttpRequest();
+                const cancelData = new FormData();
+                cancelData.append("filename", state.file.name);
+
+                cancelXhr.open('POST', '/cancel-upload', true);
+                cancelXhr.send(cancelData);
+            }
+
+            const fileItem = document.getElementById(fileId);
+            if (fileItem) {
+                fileItem.remove();
+                uploadStates.delete(fileId);
+                updateEmptyState();
+                updateActionButton();
+            }
+        }
+
+        function updateEmptyState() {
+            const emptyText = document.querySelector('.empty-text');
+            if (!emptyText && fileList.children.length === 0) {
+                fileList.innerHTML = '<div class="empty-text">No files selected</div>';
+                actionButton.style.display = 'none';
+            } else if (emptyText && fileList.children.length > 1) {
+                emptyText.remove();
+            }
+        }
+
+        function updateActionButton() {
+            // First check if any uploads are in progress
+            const hasActiveUploads = Array.from(uploadStates.values()).some(state => state.uploading);
+            if (hasActiveUploads) {
+                setButtonState(true);
+                return;
+            }
+
+            // Only proceed with other button states if no uploads are active
+            const hasErrors = Array.from(uploadStates.values()).some(state => state.error);
+            const hasNewUploads = Array.from(uploadStates.values()).some(state => !state.completed && !state.error);
+            const allSuccessful = Array.from(uploadStates.values()).every(state => state.completed);
+            setButtonState(false);
+
+            if (hasErrors) {
+                actionButton.textContent = 'Retry Failed Uploads';
+                actionButton.classList.add('retry');
+                actionButton.classList.remove('clear');
+                actionButton.onclick = retryFailedUploads;
+                actionButton.style.display = 'block';
+            } else if (hasNewUploads) {
+                actionButton.textContent = 'Upload Files';
+                actionButton.classList.remove('clear', 'retry');
+                actionButton.onclick = startUploads;
+                actionButton.style.display = 'block';
+            } else if (allSuccessful && uploadStates.size > 0) {
+                actionButton.textContent = 'Clear Files';
+                actionButton.classList.add('clear');
+                actionButton.classList.remove('retry');
+                actionButton.onclick = clearCompletedUploads;
+                actionButton.style.display = 'block';
+            } else {
+                actionButton.style.display = 'none';
+            }
+        }
+
+        function clearCompletedUploads() {
+            fileList.innerHTML = '<div class="empty-text">No files selected</div>';
+            uploadStates.clear();
+            uploadsCompleted = 0;
+            totalUploads = 0;
+            updateActionButton();
+        }
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+
+            if (uploadsCompleted > 0) {
+                clearCompletedUploads();
+            }
+
+            // Remove empty state if present
+            const emptyText = document.querySelector('.empty-text');
+            if (emptyText) emptyText.remove();
+
+            // Add each file to the list
+            Array.from(files).forEach(file => {
+                const { fileId, fileItem } = createFileItem(file);
+                fileList.appendChild(fileItem);
+
+                // Store file state
+                uploadStates.set(fileId, { file, uploading: false });
+            });
+
+            totalUploads = uploadStates.size;
+            uploadsCompleted = 0;
+            updateActionButton();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatSpeed(bytesPerSecond) {
+            if (bytesPerSecond < 1024) {
+                return `${bytesPerSecond.toFixed(1)} B/s`;
+            } else if (bytesPerSecond < 1024 * 1024) {
+                return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
+            } else {
+                return `${(bytesPerSecond / (1024 * 1024)).toFixed(1)} MB/s`;
+            }
+        }
+
+        function uploadChunk(chunk, chunkNumber, totalChunks, filename, totalSize, uploadedBeforeThisChunk, fileId) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                const formData = new FormData();
+
+                formData.append("file", chunk);
+                formData.append("chunkNumber", chunkNumber);
+                formData.append("totalChunks", totalChunks);
+                formData.append("filename", filename);
+
+                let lastUpdate = Date.now();
+                let lastUploadedBytes = uploadedBeforeThisChunk;
+                let speedUpdateInterval;
+
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const currentChunkProgress = event.loaded;
+                        const totalUploaded = uploadedBeforeThisChunk + currentChunkProgress;
+                        const overallProgress = (totalUploaded / totalSize) * 100;
+
+                        // Update progress UI
+                        const fileItem = document.getElementById(fileId);
+                        if (fileItem) {
+                            const progressFill = fileItem.querySelector('.progress-fill');
+                            const progressText = fileItem.querySelector('.progress-percentage');
+                            const speedText = fileItem.querySelector('.upload-speed');
+
+                            progressFill.style.width = `${overallProgress}%`;
+                            progressText.textContent = `${Math.round(overallProgress)}%`;
+
+                            // Update speed every second
+                            const now = Date.now();
+                            if (now - lastUpdate >= 1000) {
+                                const elapsed = (now - lastUpdate) / 1000;
+                                const bytesUploaded = totalUploaded - lastUploadedBytes;
+                                const bytesPerSecond = bytesUploaded / elapsed;
+
+                                speedText.style.display = 'inline';
+                                speedText.textContent = formatSpeed(bytesPerSecond);
+                                lastUpdate = now;
+                                lastUploadedBytes = totalUploaded;
+                            }
+                        }
+                    }
+                });
+
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            resolve(xhr.response);
+                        } else {
+                            let errorMessage = 'Server error';
+                            try {
+                                const response = JSON.parse(xhr.response);
+                                if (xhr.status === 409) {
+                                    errorMessage = response.message || 'File already exists';
+                                } else {
+                                    errorMessage = response.error || response.message || errorMessage;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing response:', e);
+                            }
+                            reject(new Error(errorMessage));
+                        }
+                    }
+                };
+
+                // Store XHR object in upload state for potential abort
+                const state = uploadStates.get(fileId);
+                if (state) {
+                    state.xhr = xhr;
+                }
+
+                xhr.open('POST', '/upload', true);
+                xhr.send(formData);
+            });
+        }
+
+        function resetFileItemState(fileId) {
+            const fileItem = document.getElementById(fileId);
+            if (fileItem) {
+                fileItem.classList.remove('error', 'completed');
+                const progressFill = fileItem.querySelector('.progress-fill');
+                const progressText = fileItem.querySelector('.progress-percentage');
+                const speedText = fileItem.querySelector('.upload-speed');
+                const errorMessage = fileItem.querySelector('.error-message');
+                const fileStatus = fileItem.querySelector('.file-status');
+
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                speedText.textContent = '0 MB/s';
+                errorMessage.textContent = '';
+
+                // Reset status icons
+                const existingIcons = fileStatus.querySelectorAll('.bx-check-circle, .bx-error-circle');
+                existingIcons.forEach(icon => icon.remove());
+            }
+        }
+
+        function retryFailedUploads() {
+            const hasFailedUploads = Array.from(uploadStates.values()).some(state => state.error);
+            if (!hasFailedUploads) return;
+
+            setButtonState(true);
+            uploadStates.forEach((state, fileId) => {
+                if (state.error) {
+                    resetFileItemState(fileId);
+                    state.error = false;
+                    state.uploading = false;
+                    uploadFile(fileId);
+                }
+            });
+        }
+
+        async function uploadFile(fileId) {
+            const state = uploadStates.get(fileId);
+            if (!state || state.uploading) return;
+
+            const file = state.file;
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            let totalUploaded = 0;
+
+            state.uploading = true;
+            state.error = false;
+            state.completed = false;
+
+            try {
+                for (let chunkNumber = 0; chunkNumber < totalChunks; chunkNumber++) {
+                    const start = chunkNumber * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+
+                    const response = await uploadChunk(
+                        chunk,
+                        chunkNumber,
+                        totalChunks,
+                        file.name,
+                        file.size,
+                        totalUploaded,
+                        fileId
+                    );
+
+                    totalUploaded += chunk.size;
+
+                    // Handle final chunk response
+                    if (chunkNumber === totalChunks - 1) {
+                        const fileItem = document.getElementById(fileId);
+                        if (fileItem) {
+                            fileItem.classList.remove('error');
+                            fileItem.classList.add('completed');
+                            const fileStatus = fileItem.querySelector('.file-status');
+                            // Set progress to exactly 100% on completion
+                            const progressFill = fileItem.querySelector('.progress-fill');
+                            const progressText = fileItem.querySelector('.progress-percentage');
+                            progressFill.style.width = '100%';
+                            progressText.textContent = '100%';
+                            fileStatus.innerHTML = `
+                        <i class="bx bx-check-circle success-icon"></i>
+                        <button class="remove-file" onclick="removeFile('${fileId}')">
+                            <i class='bx bx-trash'></i>
+                        </button>
+                    `;
+                            uploadsCompleted++;
+                            state.completed = true;
+                            updateActionButton();
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.error(error);
+
+                if (!error.message.includes('already exists')) {
+                    const cancelXhr = new XMLHttpRequest();
+                    const cancelData = new FormData();
+                    cancelData.append("filename", file.name);
+
+                    cancelXhr.open('POST', '/cancel-upload', true);
+                    cancelXhr.send(cancelData);
+                }
+
+                const fileItem = document.getElementById(fileId);
+                if (fileItem) {
+                    fileItem.classList.add('error');
+                    const fileStatus = fileItem.querySelector('.file-status');
+                    fileStatus.innerHTML = `
+                <i class="bx bx-error-circle error-icon"></i>
+                <button class="remove-file" onclick="removeFile('${fileId}')">
+                    <i class='bx bx-trash'></i>
+                </button>
+            `;
+                    const errorMessage = fileItem.querySelector('.error-message');
+                    errorMessage.textContent = `Upload failed: ${error.message || 'Server error'}`;
+
+                    // Reset progress to last valid state or 0
+                    const progressFill = fileItem.querySelector('.progress-fill');
+                    const progressText = fileItem.querySelector('.progress-percentage');
+                    const progressPercent = (totalUploaded / file.size * 100) || 0;
+                    progressFill.style.width = `${progressPercent}%`;
+                    progressText.textContent = `${Math.min(Math.round(progressPercent), 100)}%`;
+                }
+                state.error = true;
+                updateActionButton();
+            }
+
+            state.uploading = false;
+            if (Array.from(uploadStates.values()).every(s => !s.uploading && (s.completed || s.error))) {
+                setButtonState(false);
+            }
+        }
+
+        function setButtonState(isUploading) {
+            actionButton.disabled = isUploading;
+            if (isUploading) {
+                actionButton.classList.add('uploading');
+            } else {
+                actionButton.classList.remove('uploading');
+            }
+        }
+
+        function startUploads() {
+            const hasFilesToUpload = Array.from(uploadStates.values()).some(state => !state.uploading && !state.completed);
+            if (!hasFilesToUpload) return;
+
+            setButtonState(true);
+            const promises = [];
+
+            uploadStates.forEach((state, fileId) => {
+                if (!state.uploading && !state.completed) {
+                    promises.push(uploadFile(fileId));
+                }
+            });
+
+            // Wait for all uploads to complete
+            Promise.all(promises).then(() => {
+                const hasErrors = Array.from(uploadStates.values()).some(state => state.error);
+                if (hasErrors) {
+                    actionButton.textContent = 'Retry Failed Uploads';
+                    actionButton.classList.add('retry');
+                    actionButton.classList.remove('clear');
+                    actionButton.onclick = retryFailedUploads;
+                } else {
+                    actionButton.textContent = 'Clear Files';
+                    actionButton.classList.add('clear');
+                    actionButton.classList.remove('retry');
+                    actionButton.onclick = clearCompletedUploads;
+                }
+                setButtonState(false);
+            }).catch(() => {
+                actionButton.textContent = 'Retry Failed Uploads';
+                actionButton.classList.add('retry');
+                actionButton.classList.remove('clear');
+                actionButton.onclick = retryFailedUploads;
+                setButtonState(false);
+            });
+        }
+
+        // Event Listeners
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#4299e1';
+            dropZone.style.background = '#ebf8ff';
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#cbd5e0';
+            dropZone.style.background = 'white';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#cbd5e0';
+            dropZone.style.background = 'white';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+            fileInput.value = ''; // Reset input to allow selecting the same file again
+        });
+
+        // Initialize action button state
+        updateActionButton();
+    </script>
+</body>
+
+</html>
